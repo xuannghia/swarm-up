@@ -159,10 +159,9 @@ services:
   traefik:
     image: traefik:v3.0
     command:
-      - --providers.docker
-      - --providers.docker.swarmMode=true
-      - --providers.docker.exposedByDefault=false
-      - --providers.docker.network=traefik-public
+      - --providers.swarm=true
+      - --providers.swarm.exposedByDefault=false
+      - --providers.swarm.network=traefik-public
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
