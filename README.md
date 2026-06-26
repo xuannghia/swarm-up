@@ -38,6 +38,29 @@ setup → create → start → update → stop → remove
 
 ---
 
+## Example
+
+Test your setup locally using `traefik/whoami` on `example.swarm.localhost`:
+
+```bash
+# 1. Scaffold the service
+swarmup create whoami traefik/whoami --domain example.swarm.localhost
+
+# 2. Deploy it
+swarmup start whoami
+
+# 3. Test (skip TLS verification for self-signed cert)
+curl -k https://example.swarm.localhost
+```
+
+You should see a response from the whoami container with request headers and IP info.
+
+> **Using a real domain?** Point your domain's DNS A record to the VPS IP before running `start` — Traefik requests a Let's Encrypt certificate immediately on deploy and will fail if DNS isn't resolving yet.
+>
+> **DNSSEC enabled?** Ensure the DS records are correctly configured at your registrar — a misconfiguration will cause Let's Encrypt's DNS validation to fail.
+
+---
+
 ## Commands
 
 ### `setup`
