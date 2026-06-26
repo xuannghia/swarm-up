@@ -13,6 +13,18 @@ error()   { if _gum_available; then gum style --foreground 196 "  $*" >&2; else 
 
 die() { error "$*"; exit 1; }
 
+pick_service() {
+  local prompt="$1"
+  local services=()
+  if [[ -d ~/apps ]]; then
+    while IFS= read -r dir; do
+      services+=("$(basename "$dir")")
+    done < <(find ~/apps -mindepth 1 -maxdepth 1 -type d | sort)
+  fi
+  [[ ${#services[@]} -gt 0 ]] || die "No services found in ~/apps"
+  gum choose --header "$prompt" "${services[@]}"
+}
+
 create_secret() {
   local name="$1" file="$2"
   if [[ ! -s "$file" ]]; then
@@ -363,7 +375,7 @@ cmd_update() {
   require_swarm
 
   local service_name="${1:-}"
-  [[ -n "$service_name" ]] || die "Usage: swarmup.sh update <service>"
+  [[ -n "$service_name" ]] || service_name=$(pick_service "Select service to update:")
 
   local service_dir=~/apps/"$service_name"
   [[ -d "$service_dir" ]] || die "Service directory not found: $service_dir"
@@ -389,7 +401,7 @@ cmd_stop() {
   require_swarm
 
   local service_name="${1:-}"
-  [[ -n "$service_name" ]] || die "Usage: swarmup.sh stop <service>"
+  [[ -n "$service_name" ]] || service_name=$(pick_service "Select service to stop:")
 
   info "Stopping stack '$service_name'..."
   docker stack rm "$service_name"
@@ -405,7 +417,7 @@ cmd_remove() {
   require_swarm
 
   local service_name="${1:-}"
-  [[ -n "$service_name" ]] || die "Usage: swarmup.sh remove <service>"
+  [[ -n "$service_name" ]] || service_name=$(pick_service "Select service to remove:")
 
   gum confirm "Remove service '$service_name'? This is irreversible." || exit 0
 
