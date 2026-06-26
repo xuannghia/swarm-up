@@ -401,18 +401,30 @@ cmd_update() {
   [[ -d "$service_dir" ]] || die "Service directory not found: $service_dir"
   [[ -f "$service_dir/docker-compose.yml" ]] || die "No docker-compose.yml found in $service_dir"
 
-  local new_secret svc_id
+  local old_secret new_secret svc_id
   svc_id="${service_name}_${service_name}"
   new_secret="${service_name}_secrets_$(date +%s)"
+
+  # Find current secret mounted at this target
+  old_secret=$(docker service inspect "$svc_id" \
+    --format '{{range .Spec.TaskTemplate.ContainerSpec.Secrets}}{{.SecretName}} {{end}}' 2>/dev/null \
+    | tr ' ' '\n' | grep "^${service_name}_secrets" | head -1 || true)
 
   info "Creating new secret '$new_secret'..."
   create_secret "$new_secret" "$service_dir/secrets"
   success "New secret created."
 
-  info "Attaching new secret to '$svc_id'..."
-  docker service update \
-    --secret-add "source=${new_secret},target=${service_name}_secrets" \
-    "$svc_id"
+  info "Swapping secret on '$svc_id'..."
+  if [[ -n "$old_secret" ]]; then
+    docker service update \
+      --secret-rm "$old_secret" \
+      --secret-add "source=${new_secret},target=${service_name}_secrets" \
+      "$svc_id"
+  else
+    docker service update \
+      --secret-add "source=${new_secret},target=${service_name}_secrets" \
+      "$svc_id"
+  fi
 
   cleanup_secrets "${service_name}_secrets"
   success "Service '$service_name' updated."
