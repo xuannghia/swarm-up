@@ -13,6 +13,15 @@ error()   { if _gum_available; then gum style --foreground 196 "  $*" >&2; else 
 
 die() { error "$*"; exit 1; }
 
+create_secret() {
+  local name="$1" file="$2"
+  if [[ ! -s "$file" ]]; then
+    echo "" | docker secret create "$name" -
+  else
+    docker secret create "$name" "$file"
+  fi
+}
+
 require_gum() {
   _gum_available || die "gum is required. Run: ./swarmup.sh setup"
 }
@@ -302,7 +311,7 @@ cmd_start() {
   local secret_name="${service_name}_secrets"
 
   info "Creating Docker secret '$secret_name'..."
-  docker secret create "$secret_name" "$service_dir/secrets"
+  create_secret "$secret_name" "$service_dir/secrets"
   success "Secret '$secret_name' created."
 
   info "Deploying stack '$service_name'..."
@@ -330,7 +339,7 @@ cmd_update() {
 
   info "Rotating secret '$secret_name'..."
   docker secret rm "$secret_name" &>/dev/null || true
-  docker secret create "$secret_name" "$service_dir/secrets"
+  create_secret "$secret_name" "$service_dir/secrets"
   success "Secret rotated."
 
   info "Rolling update for '$service_name'..."
