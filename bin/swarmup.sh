@@ -228,9 +228,7 @@ cmd_create() {
 
   local service_name="${1:-}"
   local image_name="${2:-}"
-  [[ -n "$service_name" ]] || die "Usage: swarmup.sh create <service> <image> [--replicas N] [--domain DOMAIN]"
-  [[ -n "$image_name" ]]   || die "Usage: swarmup.sh create <service> <image> [--replicas N] [--domain DOMAIN]"
-  shift 2
+  shift $(( $# >= 2 ? 2 : $# ))
 
   local replicas=1
   local domain=""
@@ -241,6 +239,16 @@ cmd_create() {
       *) die "Unknown option: $1" ;;
     esac
   done
+
+  [[ -n "$service_name" ]] || service_name=$(gum input --placeholder "my-app" --prompt "Service name: ")
+  [[ -n "$service_name" ]] || die "Service name is required."
+
+  [[ -n "$image_name" ]] || image_name=$(gum input --placeholder "nginx:latest" --prompt "Docker image: ")
+  [[ -n "$image_name" ]] || die "Docker image is required."
+
+  if [[ -z "$domain" ]]; then
+    domain=$(gum input --placeholder "app.example.com (leave empty to skip)" --prompt "Domain (optional): ")
+  fi
 
   local service_dir=~/apps/"$service_name"
   local secret_name="${service_name}_secrets"
