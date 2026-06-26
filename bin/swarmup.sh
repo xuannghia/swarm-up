@@ -112,8 +112,10 @@ cmd_setup() {
   swarm_state=$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null || true)
   if [[ "$swarm_state" != "active" ]]; then
     info "Initializing Docker Swarm..."
-    docker swarm init
-    success "Swarm initialized."
+    local advertise_addr
+    advertise_addr=$(hostname -I | awk '{print $1}')
+    docker swarm init --advertise-addr "$advertise_addr"
+    success "Swarm initialized (advertise-addr: $advertise_addr)."
   else
     success "Swarm already active."
   fi
