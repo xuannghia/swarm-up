@@ -221,8 +221,6 @@ services:
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
       - --entrypoints.web.http.redirections.entrypoint.permanent=true
-      # Default TLS cert resolver on websecure
-      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
       # Let's Encrypt
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.letsencrypt.acme.email=${acme_email}
