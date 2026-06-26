@@ -102,11 +102,17 @@ The secret is mounted inside the container at `/run/secrets/<service-name>_secre
 ### `update`
 
 ```bash
-swarmup update <service-name>
+swarmup update <service-name> [--image IMAGE] [--replicas N]
 ```
 
-- Removes the old Docker secret and creates a new one from the current `secrets` file
-- Redeploys the stack — Docker Swarm performs a rolling update automatically
+- Rotates the Docker secret from the current `secrets` file
+- Performs a rolling update via `docker service update`
+- Optionally overrides the image or replica count for this update
+
+| Option | Description |
+|---|---|
+| `--image IMAGE` | Switch to a different image (e.g. `nginx:1.27`) |
+| `--replicas N` | Scale the service up or down |
 
 ---
 

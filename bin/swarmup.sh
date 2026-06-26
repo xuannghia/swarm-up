@@ -81,7 +81,7 @@ Commands:
   create <service> <image> [--replicas N] [--domain DOMAIN]
                                                  Scaffold service folder and compose file
   start <service>                                Create secret and deploy service to Swarm
-  update <service>                               Rotate secrets and rolling-update a service
+  update <service> [--image IMAGE] [--replicas N] Rotate secrets and rolling-update a service
   stop <service>                                 Remove service from Swarm (keeps files)
   remove <service>                               Tear down service, secret, and files
 EOF
@@ -414,6 +414,16 @@ cmd_update() {
 
   local service_name="${1:-}"
   [[ -n "$service_name" ]] || service_name=$(pick_service "Select service to update:")
+  shift || true
+
+  local new_image="" new_replicas=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --image)    new_image="${2:?--image requires a value}"; shift 2 ;;
+      --replicas) new_replicas="${2:?--replicas requires a value}"; shift 2 ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
 
   local service_dir=~/apps/"$service_name"
   [[ -d "$service_dir" ]] || die "Service directory not found: $service_dir"
@@ -432,17 +442,16 @@ cmd_update() {
   create_secret "$new_secret" "$service_dir/secrets"
   success "New secret created."
 
-  info "Swapping secret on '$svc_id'..."
+  info "Updating service '$svc_id'..."
+  local update_args=()
+  [[ -n "$new_image" ]]    && update_args+=(--image "$new_image")
+  [[ -n "$new_replicas" ]] && update_args+=(--replicas "$new_replicas")
   if [[ -n "$old_secret" ]]; then
-    docker service update \
-      --secret-rm "$old_secret" \
-      --secret-add "source=${new_secret},target=${service_name}_secrets" \
-      "$svc_id"
-  else
-    docker service update \
-      --secret-add "source=${new_secret},target=${service_name}_secrets" \
-      "$svc_id"
+    update_args+=(--secret-rm "$old_secret")
   fi
+  update_args+=(--secret-add "source=${new_secret},target=${service_name}_secrets")
+
+  docker service update "${update_args[@]}" "$svc_id"
 
   cleanup_secrets "${service_name}_secrets"
   success "Service '$service_name' updated."
