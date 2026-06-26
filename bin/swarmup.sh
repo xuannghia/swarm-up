@@ -151,37 +151,64 @@ cmd_setup() {
   acme_email=$(gum input --placeholder "your@email.com" --prompt "ACME email for Let's Encrypt: ")
   [[ -n "$acme_email" ]] || die "ACME email is required."
 
-  mkdir -p ~/traefik
+  mkdir -p ~/traefik/certs/letsencrypt
+
+  # Generate self-signed wildcard cert for *.swarm.localhost (local/internal use)
+  if [[ ! -f ~/traefik/certs/local.crt ]]; then
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+      -keyout ~/traefik/certs/local.key \
+      -out ~/traefik/certs/local.crt \
+      -subj "/CN=*.swarm.localhost" 2>/dev/null
+  fi
+
+  # Dynamic config: wire up the self-signed cert (lives inside ~/traefik/certs/)
+  cat > ~/traefik/certs/tls.yml <<EOF
+tls:
+  certificates:
+    - certFile: /certs/local.crt
+      keyFile: /certs/local.key
+EOF
 
   cat > ~/traefik/docker-compose.yml <<EOF
 version: "3.8"
 services:
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.7
     command:
+      # Swarm provider
       - --providers.swarm=true
+      - --providers.swarm.endpoint=unix:///var/run/docker.sock
+      - --providers.swarm.watch=true
       - --providers.swarm.exposedByDefault=false
       - --providers.swarm.network=traefik-public
+      # Dynamic config (self-signed cert)
+      - --providers.file.filename=/certs/tls.yml
+      - --providers.file.watch=true
+      # Entrypoints
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      # HTTP -> HTTPS redirect
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      # Default TLS cert resolver on websecure
+      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+      # Let's Encrypt
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.letsencrypt.acme.email=${acme_email}
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.storage=/certs/letsencrypt/acme.json
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-letsencrypt:/letsencrypt
+      - ~/traefik/certs:/certs
     networks:
       - traefik-public
     deploy:
       placement:
         constraints:
           - node.role == manager
-volumes:
-  traefik-letsencrypt:
 networks:
   traefik-public:
     external: true
