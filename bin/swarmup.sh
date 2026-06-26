@@ -367,7 +367,25 @@ cmd_start() {
   require_swarm
 
   local service_name="${1:-}"
-  [[ -n "$service_name" ]] || die "Usage: swarmup.sh start <service>"
+  if [[ -z "$service_name" ]]; then
+    # List ~/apps dirs that are NOT already running as a stack
+    local running=()
+    while IFS= read -r stack; do running+=("$stack"); done \
+      < <(docker stack ls --format '{{.Name}}' 2>/dev/null)
+
+    local stopped=()
+    if [[ -d ~/apps ]]; then
+      while IFS= read -r dir; do
+        local name; name=$(basename "$dir")
+        local is_running=false
+        for s in "${running[@]}"; do [[ "$s" == "$name" ]] && is_running=true && break; done
+        $is_running || stopped+=("$name")
+      done < <(find ~/apps -mindepth 1 -maxdepth 1 -type d | sort)
+    fi
+
+    [[ ${#stopped[@]} -gt 0 ]] || die "No stopped services found in ~/apps"
+    service_name=$(gum choose --header "Select service to start:" "${stopped[@]}")
+  fi
 
   local service_dir=~/apps/"$service_name"
   [[ -f "$service_dir/docker-compose.yml" ]] || die "No docker-compose.yml found. Run: ./swarmup.sh create $service_name <image>"
