@@ -78,7 +78,7 @@ Usage: swarmup.sh <command> [args]
 
 Commands:
   setup                                          Install deps, init Swarm, deploy Traefik
-  create <service> <image> [--replicas N] [--domain DOMAIN]
+  create <service> <image> [--replicas N] [--domain DOMAIN] [--port PORT]
                                                  Scaffold service folder and compose file
   start <service>                                Create secret and deploy service to Swarm
   update <service> [--image IMAGE] [--replicas N] Rotate secrets and rolling-update a service
@@ -260,10 +260,12 @@ cmd_create() {
 
   local replicas=1
   local domain=""
+  local port=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --replicas) replicas="${2:?--replicas requires a value}"; shift 2 ;;
       --domain)   domain="${2:?--domain requires a value}"; shift 2 ;;
+      --port)     port="${2:?--port requires a value}"; shift 2 ;;
       *) die "Unknown option: $1" ;;
     esac
   done
@@ -280,6 +282,11 @@ cmd_create() {
 
   local service_dir=~/apps/"$service_name"
   local secret_name="${service_name}_secrets"
+
+  if [[ -d "$service_dir" ]]; then
+    gum confirm "Directory '$service_dir' already exists. Overwrite?" || die "Aborted."
+  fi
+
   mkdir -p "$service_dir"
 
   # Create empty secrets file if not present
@@ -290,9 +297,10 @@ cmd_create() {
 
   # Compose file
   if [[ -n "$domain" ]]; then
-    local port
-    port=$(gum input --placeholder "8080" --prompt "Container port for Traefik routing: ")
-    [[ -n "$port" ]] || die "Container port is required when --domain is set."
+    if [[ -z "$port" ]]; then
+      port=$(gum input --placeholder "8080" --prompt "Container port for Traefik routing: ")
+      [[ -n "$port" ]] || die "Container port is required when --domain is set."
+    fi
 
     cat > "$service_dir/docker-compose.yml" <<EOF
 version: "3.8"

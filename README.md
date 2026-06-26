@@ -44,7 +44,7 @@ Test your setup locally using `traefik/whoami` on `example.swarm.localhost`:
 
 ```bash
 # 1. Scaffold the service
-swarmup create whoami traefik/whoami --domain example.swarm.localhost
+swarmup create whoami traefik/whoami --domain example.swarm.localhost --port 80
 
 # 2. Deploy it
 swarmup start whoami
@@ -81,7 +81,7 @@ Run once on a fresh server. Idempotent — safe to re-run.
 ### `create`
 
 ```bash
-swarmup create <service-name> <image-name> [--replicas N] [--domain DOMAIN]
+swarmup create <service-name> <image-name> [--replicas N] [--domain DOMAIN] [--port PORT]
 ```
 
 Scaffolds `~/apps/<service-name>/` with a `docker-compose.yml` and an empty `secrets` file. Does **not** deploy — run `start` when ready.
@@ -90,8 +90,9 @@ Scaffolds `~/apps/<service-name>/` with a `docker-compose.yml` and an empty `sec
 |---|---|---|
 | `--replicas N` | `1` | Number of Swarm replicas |
 | `--domain DOMAIN` | _(none)_ | Public domain for Traefik routing |
+| `--port PORT` | _(prompted)_ | Container port for Traefik routing (required with `--domain`) |
 
-**With `--domain`:** attaches to both `traefik-public` and `app-network`, adds Traefik labels, prompts for the container port. Traefik handles HTTPS via Let's Encrypt automatically.
+**With `--domain`:** attaches to both `traefik-public` and `app-network`, adds Traefik labels, and uses `--port` for routing (prompts if omitted). Traefik handles HTTPS via Let's Encrypt automatically.
 
 **Without `--domain`:** attaches to `app-network` only (internal service, not publicly routed).
 
