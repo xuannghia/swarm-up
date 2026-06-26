@@ -13,6 +13,24 @@ error()   { if _gum_available; then gum style --foreground 196 "  $*" >&2; else 
 
 die() { error "$*"; exit 1; }
 
+cleanup_secrets() {
+  local prefix="$1"
+  # Collect secrets in use by any running service
+  local in_use
+  in_use=$(docker service ls --format '{{.Name}}' 2>/dev/null | xargs -I{} \
+    docker service inspect {} --format '{{range .Spec.TaskTemplate.ContainerSpec.Secrets}}{{.SecretName}} {{end}}' 2>/dev/null || true)
+
+  local removed=0
+  while IFS= read -r name; do
+    if echo "$in_use" | grep -qw "$name"; then
+      continue
+    fi
+    docker secret rm "$name" &>/dev/null && (( removed++ )) || true
+  done < <(docker secret ls --format '{{.Name}}' | grep "^${prefix}")
+
+  [[ $removed -gt 0 ]] && success "Removed $removed stale secret(s) with prefix '$prefix'." || info "No stale secrets found."
+}
+
 pick_service() {
   local prompt="$1"
   local services=()
@@ -356,6 +374,8 @@ cmd_start() {
 
   local secret_name="${service_name}_secrets"
 
+  cleanup_secrets "${service_name}_secrets"
+
   info "Creating Docker secret '$secret_name'..."
   create_secret "$secret_name" "$service_dir/secrets"
   success "Secret '$secret_name' created."
@@ -381,15 +401,20 @@ cmd_update() {
   [[ -d "$service_dir" ]] || die "Service directory not found: $service_dir"
   [[ -f "$service_dir/docker-compose.yml" ]] || die "No docker-compose.yml found in $service_dir"
 
-  local secret_name="${service_name}_secrets"
+  local new_secret svc_id
+  svc_id="${service_name}_${service_name}"
+  new_secret="${service_name}_secrets_$(date +%s)"
 
-  info "Rotating secret '$secret_name'..."
-  docker secret rm "$secret_name" &>/dev/null || true
-  create_secret "$secret_name" "$service_dir/secrets"
-  success "Secret rotated."
+  info "Creating new secret '$new_secret'..."
+  create_secret "$new_secret" "$service_dir/secrets"
+  success "New secret created."
 
-  info "Rolling update for '$service_name'..."
-  docker stack deploy -d -c "$service_dir/docker-compose.yml" "$service_name"
+  info "Attaching new secret to '$svc_id'..."
+  docker service update \
+    --secret-add "source=${new_secret},target=${service_name}_secrets" \
+    "$svc_id"
+
+  cleanup_secrets "${service_name}_secrets"
   success "Service '$service_name' updated."
 }
 
@@ -405,7 +430,8 @@ cmd_stop() {
 
   info "Stopping stack '$service_name'..."
   docker stack rm "$service_name"
-  success "Service '$service_name' stopped. Files and secret preserved."
+  cleanup_secrets "${service_name}_secrets"
+  success "Service '$service_name' stopped. Files preserved."
 }
 
 # ---------------------------------------------------------------------------
@@ -421,13 +447,11 @@ cmd_remove() {
 
   gum confirm "Remove service '$service_name'? This is irreversible." || exit 0
 
-  local secret_name="${service_name}_secrets"
-
   info "Removing stack '$service_name'..."
   docker stack rm "$service_name" &>/dev/null || true
 
-  info "Removing secret '$secret_name'..."
-  docker secret rm "$secret_name" &>/dev/null || true
+  info "Cleaning up secrets..."
+  cleanup_secrets "${service_name}_secrets"
 
   info "Removing service directory..."
   rm -rf ~/apps/"$service_name"
