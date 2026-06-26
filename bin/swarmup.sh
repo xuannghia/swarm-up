@@ -7,9 +7,9 @@ set -euo pipefail
 
 _gum_available() { command -v gum &>/dev/null; }
 
-info()    { if _gum_available; then gum style --foreground 33 "  $*"; else echo "[info] $*"; fi; }
-success() { if _gum_available; then gum style --foreground 82 "  $*"; else echo "[ok]   $*"; fi; }
-error()   { if _gum_available; then gum style --foreground 196 "  $*" >&2; else echo "[err]  $*" >&2; fi; }
+info()    { if _gum_available; then gum style --foreground "212" "  $*"; else echo "[info] $*"; fi; }
+success() { if _gum_available; then gum style --foreground "10" "  $*"; else echo "[ok]   $*"; fi; }
+error()   { if _gum_available; then gum style --foreground "9" "  $*" >&2; else echo "[err]  $*" >&2; fi; }
 
 die() { error "$*"; exit 1; }
 
