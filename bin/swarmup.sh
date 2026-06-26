@@ -225,6 +225,9 @@ services:
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.letsencrypt.acme.email=${acme_email}
       - --certificatesresolvers.letsencrypt.acme.storage=/certs/letsencrypt/acme.json
+      # Observability
+      - --log.level=INFO
+      - --accesslog=true
     ports:
       - "80:80"
       - "443:443"
