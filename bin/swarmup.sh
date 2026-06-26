@@ -61,6 +61,8 @@ cmd_setup() {
     info "Installing gum..."
     case "$distro" in
       ubuntu|debian)
+        sudo apt-get update -qq
+        sudo apt-get install -y gpg curl
         sudo mkdir -p /etc/apt/keyrings
         curl -fsSL https://repo.charm.sh/apt/gpg.key \
           | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
