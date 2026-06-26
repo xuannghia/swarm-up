@@ -44,10 +44,10 @@ Test your setup locally using `traefik/whoami` on `example.swarm.localhost`:
 
 ```bash
 # 1. Scaffold the service
-swarmup create whoami traefik/whoami --domain example.swarm.localhost --port 80
+swarmup create example traefik/whoami --domain example.swarm.localhost --port 80
 
 # 2. Deploy it
-swarmup start whoami
+swarmup start example
 
 # 3. Test (skip TLS verification for self-signed cert)
 curl -k https://example.swarm.localhost

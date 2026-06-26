@@ -53,13 +53,13 @@ create_secret() {
 }
 
 require_gum() {
-  _gum_available || die "gum is required. Run: ./swarmup.sh setup"
+  _gum_available || die "gum is required. Run: swarmup setup"
 }
 
 require_swarm() {
   local state
   state=$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null || true)
-  [[ "$state" == "active" ]] || die "Docker Swarm is not active. Run: ./swarmup.sh setup"
+  [[ "$state" == "active" ]] || die "Docker Swarm is not active. Run: swarmup setup"
 }
 
 detect_distro() {
@@ -74,7 +74,7 @@ detect_distro() {
 
 usage() {
   cat <<EOF
-Usage: swarmup.sh <command> [args]
+Usage: swarmup <command> [args]
 
 Commands:
   setup                                          Install deps, init Swarm, deploy Traefik
@@ -371,7 +371,7 @@ EOF
   fi
 
   success "Service '$service_name' scaffolded at $service_dir"
-  info "Edit $service_dir/secrets then run: ./swarmup.sh start $service_name"
+  info "Edit $service_dir/secrets then run: swarmup start $service_name"
 }
 
 # ---------------------------------------------------------------------------
@@ -404,7 +404,7 @@ cmd_start() {
   fi
 
   local service_dir=~/apps/"$service_name"
-  [[ -f "$service_dir/docker-compose.yml" ]] || die "No docker-compose.yml found. Run: ./swarmup.sh create $service_name <image>"
+  [[ -f "$service_dir/docker-compose.yml" ]] || die "No docker-compose.yml found. Run: swarmup create $service_name <image>"
 
   local secret_name="${service_name}_secrets"
 
