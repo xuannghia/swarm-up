@@ -317,6 +317,7 @@ services:
         - traefik.enable=true
         - traefik.http.routers.${service_name}.rule=Host(\`${domain}\`)
         - traefik.http.routers.${service_name}.entrypoints=websecure
+        - traefik.http.routers.${service_name}.tls=true
         - traefik.http.routers.${service_name}.tls.certresolver=letsencrypt
         - traefik.http.services.${service_name}.loadbalancer.server.port=${port}
 secrets:
