@@ -5,7 +5,7 @@ A single script to deploy web applications to a Docker Swarm cluster using [Trae
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xuannghia/swarm-up/main/bin/swarmup.sh \
+curl -fsSL https://github.com/xuannghia/swarm-up/raw/refs/heads/main/bin/swarmup.sh \
   -o /tmp/swarmup.sh && \
   sudo mv /tmp/swarmup.sh /usr/local/bin/swarmup && \
   sudo chmod +x /usr/local/bin/swarmup
