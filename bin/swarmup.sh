@@ -215,7 +215,7 @@ networks:
 EOF
 
   info "Deploying Traefik..."
-  docker stack deploy -c ~/traefik/docker-compose.yml traefik
+  docker stack deploy -d -c ~/traefik/docker-compose.yml traefik
   success "Traefik deployed."
 }
 
@@ -341,7 +341,7 @@ cmd_start() {
   success "Secret '$secret_name' created."
 
   info "Deploying stack '$service_name'..."
-  docker stack deploy -c "$service_dir/docker-compose.yml" "$service_name"
+  docker stack deploy -d -c "$service_dir/docker-compose.yml" "$service_name"
   success "Service '$service_name' deployed."
   info "Secrets are mounted at /run/secrets/${secret_name} inside the container."
 }
@@ -369,7 +369,7 @@ cmd_update() {
   success "Secret rotated."
 
   info "Rolling update for '$service_name'..."
-  docker stack deploy -c "$service_dir/docker-compose.yml" "$service_name"
+  docker stack deploy -d -c "$service_dir/docker-compose.yml" "$service_name"
   success "Service '$service_name' updated."
 }
 
