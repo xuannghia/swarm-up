@@ -84,6 +84,7 @@ Commands:
   update <service> [--image IMAGE] [--replicas N] Rotate secrets and rolling-update a service
   stop <service>                                 Remove service from Swarm (keeps files)
   remove <service>                               Tear down service, secret, and files
+  logs <service>                                 Follow logs for a running service
 EOF
 }
 
@@ -515,6 +516,19 @@ cmd_remove() {
 }
 
 # ---------------------------------------------------------------------------
+# logs
+# ---------------------------------------------------------------------------
+
+cmd_logs() {
+  require_swarm
+
+  local service_name="${1:-}"
+  [[ -n "$service_name" ]] || service_name=$(pick_service "Select service to view logs:")
+
+  docker service logs -f "${service_name}_${service_name}"
+}
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 
@@ -525,5 +539,6 @@ case "${1:-}" in
   update) shift; cmd_update "$@" ;;
   stop)   shift; cmd_stop "$@" ;;
   remove) shift; cmd_remove "$@" ;;
+  logs)   shift; cmd_logs "$@" ;;
   *)      usage; exit 1 ;;
 esac
