@@ -25,16 +25,28 @@ swarmup setup
 
 ## Typical Workflow
 
+**First time on a new server:**
 ```
-setup → create → start → update → stop → remove
+setup → create → start
 ```
 
-1. **`setup`** — once per server
-2. **`create`** — once per service, scaffolds files
-3. **`start`** — deploy the service to the Swarm
-4. **`update`** — rotate secrets and rolling-restart
-5. **`stop`** — take the service offline (files preserved)
-6. **`remove`** — permanently delete service, secret, and files
+**Day-to-day:**
+```
+update        # push new image or rotate secrets
+logs          # tail live output
+stop / start  # take offline and bring back
+remove        # tear down completely
+```
+
+| Step | Command | When |
+|---|---|---|
+| 1 | `setup` | Once per server — installs deps, initialises Swarm, deploys Traefik |
+| 2 | `create` | Once per service — scaffolds `~/apps/<service>/` with compose and secrets file |
+| 3 | `start` | Deploys the service to the Swarm |
+| 4 | `logs` | Follow live container output |
+| 5 | `update` | Rolling redeploy — rotates secrets, optionally changes image or replica count |
+| 6 | `stop` | Takes the service offline, files and secrets preserved |
+| 7 | `remove` | Permanently deletes the stack, secret, and `~/apps/<service>/` |
 
 ---
 
@@ -161,3 +173,13 @@ Permanently removes the service. Prompts for confirmation, then:
 - Removes the stack from the Swarm
 - Deletes the Docker secret
 - Deletes `~/apps/<service-name>/`
+
+---
+
+### `logs`
+
+```bash
+swarmup logs [<service-name>]
+```
+
+Follows live logs for a running service (`docker service logs -f`). Prompts to select a service if none is given.
