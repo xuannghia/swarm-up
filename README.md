@@ -2,7 +2,7 @@
 
 A single script to deploy web applications to a Docker Swarm cluster using [Traefik](https://traefik.io) for routing and SSL, and [Gum](https://github.com/charmbracelet/gum) for interactive prompts.
 
-[![asciicast](https://asciinema.org/a/xHFqPQT0Ct1gYD7M.svg)](https://asciinema.org/a/xHFqPQT0Ct1gYD7M)
+![swarmup demo](./swarmup.gif)
 
 ## Installation
 
